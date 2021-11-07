@@ -1,3 +1,4 @@
+
 class Button{
   int prev_state;
   int cur_state;
@@ -13,9 +14,13 @@ class Button{
       return cur_state;
     }
 
-  inline void set_state(int state){
+  void set_state(int state){
     prev_state = cur_state;
     cur_state = state;
+  }
+
+  void update(){
+    set_state(digitalRead(pin));
   }
 };
 
@@ -31,7 +36,7 @@ enum BOMB_STATE {
 
 const int BOMB_WIRE_ONE = 12;
 const int BOMB_WIRE_TWO = 11;
- 
+const int BUZZER_PIN = A1; 
 
 BOMB_STATE cur_state = BOMB_STATE::IDLE;
 Button arm_bomb_btn(9), set_bomb_time_btn(10);
@@ -48,23 +53,34 @@ void setup() {
   pinMode(BOMB_WIRE_ONE, INPUT_PULLUP);
   pinMode(BOMB_WIRE_TWO, INPUT_PULLUP);
 
+  Serial.begin(9600);
+  Serial.println("Begin");
 }
 
 void loop() {
   if(cur_state == BOMB_STATE::IDLE){
 
-    set_bomb_time_btn.set_state(digitalRead(set_bomb_time_btn.pin));
-    arm_bomb_btn.set_state(digitalRead(arm_bomb_btn.pin));
+    set_bomb_time_btn.update();
+    arm_bomb_btn.update();
 
-    if(set_bomb_time_btn.get_state() == LOW){
+    if(set_bomb_time_btn.get_state() == LOW){      
       const unsigned long set_timer_step_millis = 30UL * 60UL * 1000UL; // 30 min
       bomb_explode_time += set_timer_step_millis;
       bomb_explode_time %= MAX_BOMB_TIME;
+
+      Serial.println(String("Set timer to:") + String(bomb_explode_time));
     } else if(arm_bomb_btn.get_state() == LOW){
+      Serial.println("Now operational");
+
       cur_state == BOMB_STATE::OPERATIONAL;
       bomb_timer = 0;
-      // TODO: play armed sfx
-      
+
+      // play armed sfx
+      tone(BUZZER_PIN, 1600, 350);
+      delay(350);
+      tone(BUZZER_PIN, 1600, 350);
+      delay(350);
+      tone(BUZZER_PIN, 1600, 1000);
     }
   }
   else if (cur_state == BOMB_STATE::OPERATIONAL){
@@ -85,5 +101,12 @@ void loop() {
   }
   else if (cur_state == BOMB_STATE::EXPLODED){
     // TODO: after 5 sec go to idle
+  }
+
+  if(cur_state == BOMB_STATE::OPERATIONAL){
+    delay(1000);
+  }
+  else{
+    delay(100);
   }
 }
