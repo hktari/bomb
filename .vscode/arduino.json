@@ -2,5 +2,6 @@
     "configuration": "cpu=atmega328old",
     "board": "arduino:avr:nano",
     "programmer": "arduino:avrispmkii",
-    "sketch": "bomb.ino"
+    "sketch": "bomb.ino",
+    "port": "COM3"
 }
