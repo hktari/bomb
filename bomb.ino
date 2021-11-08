@@ -48,9 +48,9 @@ enum BOMB_STATE
   DEFUSED
 };
 
-const int DP_LATCH_PIN = 5;        // Latch pin of 74HC595 is connected to Digital pin 5
-const int DP_CLK_PIN = 6;          // Clock pin of 74HC595 is connected to Digital pin 6
-const int DP_DIGIT_0_DATA_PIN = 4; // Data pin of 74HC595 is connected to Digital pin 4
+const int DP_LATCH_PIN = 5; // Latch pin of 74HC595 is connected to Digital pin 5
+const int DP_CLK_PIN = 6;   // Clock pin of 74HC595 is connected to Digital pin 6
+const int DP_DATA_PIN = 4;  // Data pin of 74HC595 is connected to Digital pin 4
 
 const int BOMB_WIRE_ONE_PIN = 12;
 const int BOMB_WIRE_TWO_PIN = 11;
@@ -91,7 +91,7 @@ void setup()
   // Set all the pins of 74HC595 as OUTPUT
   pinMode(DP_LATCH_PIN, OUTPUT);
   pinMode(DP_CLK_PIN, OUTPUT);
-  pinMode(DP_DIGIT_0_DATA_PIN, OUTPUT);
+  pinMode(DP_DATA_PIN, OUTPUT);
 
   Serial.begin(9600);
   Serial.println("Begin");
@@ -232,15 +232,20 @@ void update_display()
   Serial.print(sec);
   Serial.println();
 
-  
-  int sec_dig_1 = sec / 10 % 10;
-  int sec_dig_2 = sec % 10;
-
-  // Serial.print(sec_dig_1);
-  // Serial.print(" : ");
-  // Serial.print(digit_to_DP_code(sec_dig_1), HEX);
+  int hrs_digits[] = {h / 10 % 10, h % 10};
+  int min_digits[] = {min / 10 % 10, min % 10};
+  int sec_digits[] = {sec / 10 % 10, sec % 10};
 
   digitalWrite(DP_LATCH_PIN, LOW);
-  // shiftOut(DP_DIGIT_0_DATA_PIN, DP_CLK_PIN, LSBFIRST, leds);
+
+  // You've got 6 displays. 6 shift registers
+  // Wired from left most hour digit towards right most seconds digit.
+  shiftOut(DP_DATA_PIN, DP_CLK_PIN, LSBFIRST, digit_to_DP_code(sec_digits[1]));
+  shiftOut(DP_DATA_PIN, DP_CLK_PIN, LSBFIRST, digit_to_DP_code(sec_digits[0]));
+  shiftOut(DP_DATA_PIN, DP_CLK_PIN, LSBFIRST, digit_to_DP_code(min_digits[1]));
+  shiftOut(DP_DATA_PIN, DP_CLK_PIN, LSBFIRST, digit_to_DP_code(min_digits[0]));
+  shiftOut(DP_DATA_PIN, DP_CLK_PIN, LSBFIRST, digit_to_DP_code(hrs_digits[1]));
+  shiftOut(DP_DATA_PIN, DP_CLK_PIN, LSBFIRST, digit_to_DP_code(hrs_digits[0]));
+
   digitalWrite(DP_LATCH_PIN, HIGH);
 }
