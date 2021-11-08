@@ -117,7 +117,7 @@ void loop()
         bomb_explode_duration = 0;
       }
 
-      Serial.println(String("Set timer to: ") + String(bomb_explode_duration / 60 ) + String(" minutes"));
+      Serial.println(String("Set timer to: ") + String(bomb_explode_duration / 60) + String(" minutes"));
     }
     else if (arm_bomb_btn.transitioned_to(LOW))
     {
@@ -197,6 +197,22 @@ void loop()
 // 1 1 1 0 0 0 0 0	    7	      0x07
 // 1 1 1 1 1 1 1 0	    8	      0x7F
 // 1 1 1 1 0 1 1 0	    9	      0x67
+
+byte digit_to_DP_code(int digit)
+{
+  if (digit > 9 || digit < 0)
+  {
+    Serial.println("Wrong input to 'digit_to_DP_code' !");
+    Serial.println(digit);
+    return 0;
+  }
+  else
+  {
+    byte codes_map[] = {0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x67};
+    return codes_map[digit];
+  }
+}
+
 void update_display()
 {
   auto time_left = bomb_started_time + bomb_explode_duration - now();
@@ -215,6 +231,14 @@ void update_display()
   Serial.print(":");
   Serial.print(sec);
   Serial.println();
+
+  
+  int sec_dig_1 = sec / 10 % 10;
+  int sec_dig_2 = sec % 10;
+
+  // Serial.print(sec_dig_1);
+  // Serial.print(" : ");
+  // Serial.print(digit_to_DP_code(sec_dig_1), HEX);
 
   digitalWrite(DP_LATCH_PIN, LOW);
   // shiftOut(DP_DIGIT_0_DATA_PIN, DP_CLK_PIN, LSBFIRST, leds);
