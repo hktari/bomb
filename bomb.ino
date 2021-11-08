@@ -1,4 +1,5 @@
 #include <TimeLib.h>
+#define DEBUG
 
 class Button
 {
@@ -69,6 +70,8 @@ unsigned long MAX_BOMB_TIME = 6UL * 3600UL * 1000UL; // 6 hrs
 
 time_t bomb_started_time = 0;
 
+int dp_digits[6] = {};
+
 void switch_state(BOMB_STATE state)
 {
   cur_state = state;
@@ -95,6 +98,9 @@ void setup()
 
   Serial.begin(9600);
   Serial.println("Begin");
+
+  duration_to_digits_arr(0, dp_digits);
+  update_display(dp_digits);
 }
 
 void loop()
@@ -118,6 +124,9 @@ void loop()
       }
 
       Serial.println(String("Set timer to: ") + String(bomb_explode_duration / 60) + String(" minutes"));
+
+      duration_to_digits_arr(set_timer_step_sec, dp_digits);
+      update_display(dp_digits);
     }
     else if (arm_bomb_btn.transitioned_to(LOW))
     {
@@ -164,7 +173,16 @@ void loop()
     {
       // Pulse
       tone(BUZZER_PIN, 1300, 100);
-      update_display();
+
+      // Update display
+      auto time_left = bomb_started_time + bomb_explode_duration - now();
+      if (time_left < 0)
+      {
+        time_left = 0;
+      }
+
+      duration_to_digits_arr(time_left, dp_digits);
+      update_display(dp_digits);
     }
   }
   else if (cur_state == BOMB_STATE::DEFUSED)
@@ -197,7 +215,6 @@ void loop()
 // 1 1 1 0 0 0 0 0	    7	      0x07
 // 1 1 1 1 1 1 1 0	    8	      0x7F
 // 1 1 1 1 0 1 1 0	    9	      0x67
-
 byte digit_to_DP_code(int digit)
 {
   if (digit > 9 || digit < 0)
@@ -213,39 +230,44 @@ byte digit_to_DP_code(int digit)
   }
 }
 
-void update_display()
+void duration_to_digits_arr(time_t duration, int digits[6])
 {
-  auto time_left = bomb_started_time + bomb_explode_duration - now();
-  if (time_left < 0)
-  {
-    time_left = 0;
-  }
+  int h = hour(duration);
+  int min = minute(duration);
+  int sec = second(duration);
 
-  int h = hour(time_left);
-  int min = minute(time_left);
-  int sec = second(time_left);
-
+#ifdef DEBUG
   Serial.print(h);
   Serial.print(":");
   Serial.print(min);
   Serial.print(":");
   Serial.print(sec);
   Serial.println();
+#endif
 
-  int hrs_digits[] = {h / 10 % 10, h % 10};
-  int min_digits[] = {min / 10 % 10, min % 10};
-  int sec_digits[] = {sec / 10 % 10, sec % 10};
+  digits[0] = h / 10 % 10;
+  digits[1] = h % 10;
+  digits[2] = min / 10 % 10;
+  digits[3] = min % 10;
+  digits[4] = sec / 10 % 10;
+  digits[5] = sec % 10;
+}
 
+// You've got 6 displays. 6 shift registers
+// Wired from left most hour digit towards right most seconds digit.
+// digits is an array of length 6, containing numbers between [0-9]
+void update_display(int digits[6])
+{
   digitalWrite(DP_LATCH_PIN, LOW);
 
-  // You've got 6 displays. 6 shift registers
-  // Wired from left most hour digit towards right most seconds digit.
-  shiftOut(DP_DATA_PIN, DP_CLK_PIN, LSBFIRST, digit_to_DP_code(sec_digits[1]));
-  shiftOut(DP_DATA_PIN, DP_CLK_PIN, LSBFIRST, digit_to_DP_code(sec_digits[0]));
-  shiftOut(DP_DATA_PIN, DP_CLK_PIN, LSBFIRST, digit_to_DP_code(min_digits[1]));
-  shiftOut(DP_DATA_PIN, DP_CLK_PIN, LSBFIRST, digit_to_DP_code(min_digits[0]));
-  shiftOut(DP_DATA_PIN, DP_CLK_PIN, LSBFIRST, digit_to_DP_code(hrs_digits[1]));
-  shiftOut(DP_DATA_PIN, DP_CLK_PIN, LSBFIRST, digit_to_DP_code(hrs_digits[0]));
+  for (size_t i = 5; i > 0; i--)
+  {
+#ifdef DEBUG
+    Serial.print("Displaying digit: ");
+    Serial.print(digits[i], DEC);
+#endif
+    shiftOut(DP_DATA_PIN, DP_CLK_PIN, LSBFIRST, digit_to_DP_code(digits[i]));
+  }
 
   digitalWrite(DP_LATCH_PIN, HIGH);
 }
