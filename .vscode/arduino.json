@@ -1,6 +1,11 @@
 {
     "board": "arduino:avr:uno",
     "programmer": "arduino:avrispmkii",
+<<<<<<< HEAD
     "sketch": "../TM1637/examples/TM1637Test/TM1637Test.ino",
     "port": "/dev/ttyACM0"
+=======
+    "sketch": "bomb.ino",
+    "port": "COM3"
+>>>>>>> e1b6746a425e8e34586a63e189dc3520f623fd17
 }
