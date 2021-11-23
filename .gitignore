@@ -1,4 +1,4 @@
 **/tempCodeRunnerFile
 _deps
-**/c_cpp_properties.json
-**/arduino.json
+.vscode/c_cpp_properties.json
+.vscode/arduino.json

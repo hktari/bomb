@@ -1,6 +1,6 @@
 {
-    "configuration": "cpu=atmega328old",
-    "board": "arduino:avr:nano",
+    "board": "arduino:avr:uno",
     "programmer": "arduino:avrispmkii",
-    "sketch": "bomb.ino"
+    "sketch": "../TM1637/examples/TM1637Test/TM1637Test.ino",
+    "port": "/dev/ttyACM0"
 }
