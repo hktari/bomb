@@ -4,6 +4,13 @@
 
 #define DEBUG
 
+enum DEFUSED_STATE
+{
+  WIRE_1_CUT = 1,
+  WIRE_2_CUT = 2,
+  WIRE_3_CUT = 4
+};
+
 enum BOMB_STATE
 {
   IDLE,
@@ -21,12 +28,15 @@ const int DP_1_DATA_PIN = 3;  // Data pin of 74HC595 is connected to Digital pin
 
 const int BOMB_WIRE_ONE_PIN = 12;
 const int BOMB_WIRE_TWO_PIN = 11;
+const int BOMB_WIRE_THREE_PIN = 9;
+
 const int SET_BOMB_TIME_BTN_PIN = 10;
 
 const int BUZZER_PIN = A1;
 const int RED_LED_PIN = 2;
 const int GREEN_LED_PIN = 3;
 
+uint8_t state_defused = 0;
 BOMB_STATE cur_state = BOMB_STATE::IDLE;
 Button set_bomb_time_btn(SET_BOMB_TIME_BTN_PIN);
 
@@ -38,6 +48,12 @@ unsigned long MAX_BOMB_TIME = 6UL * 3600UL * 1000UL; // 6 hrs
 time_t bomb_started_time = 0;
 
 uint8_t dp_digits[5] = {};
+
+void explode()
+{
+  switch_state(BOMB_STATE::EXPLODED);
+  // TODO: play explode sfx
+}
 
 void switch_state(BOMB_STATE state)
 {
@@ -69,6 +85,7 @@ void setup()
 
   pinMode(BOMB_WIRE_ONE_PIN, INPUT_PULLUP);
   pinMode(BOMB_WIRE_TWO_PIN, INPUT_PULLUP);
+  pinMode(BOMB_WIRE_THREE_PIN, INPUT_PULLUP);
 
   pinMode(RED_LED_PIN, OUTPUT);
   pinMode(GREEN_LED_PIN, OUTPUT);
@@ -94,7 +111,6 @@ void loop()
     digitalWrite(GREEN_LED_PIN, LOW);
 
     set_bomb_time_btn.update();
-    arm_bomb_btn.update();
 
     if (set_bomb_time_btn.transitioned_to(HIGH))
     {
@@ -127,7 +143,14 @@ void loop()
   }
   else if (cur_state == BOMB_STATE::OPERATIONAL)
   {
-    if (digitalRead(BOMB_WIRE_ONE_PIN) == HIGH)
+    if (digitalRead(BOMB_WIRE_ONE_PIN) == HIGH) state_defused |= DEFUSED_STATE::WIRE_1_CUT;
+    if (digitalRead(BOMB_WIRE_TWO_PIN) == HIGH) state_defused |= DEFUSED_STATE::WIRE_2_CUT;
+    if (digitalRead(BOMB_WIRE_THREE_PIN) == HIGH) state_defused |= DEFUSED_STATE::WIRE_3_CUT;
+
+    const uint8_t DEFUSED_SUCCESS = DEFUSED_STATE::WIRE_1_CUT | DEFUSED_STATE::WIRE_2_CUT | DEFUSED_STATE::WIRE_3_CUT;
+    const uint8_t DEFUSED_WRONG = DEFUSED_STATE::WIRE_3_CUT | DEFUSED_STATE::WIRE_2_CUT;
+
+    if ((state_defused & DEFUSED_SUCCESS) == DEFUSED_SUCCESS)
     {
       switch_state(BOMB_STATE::DEFUSED);
 
@@ -147,25 +170,51 @@ void loop()
       digitalWrite(GREEN_LED_PIN, HIGH);
       tone(BUZZER_PIN, 1300, 350);
     }
-    else if (now() > bomb_started_time + bomb_explode_duration)
+    // If wire 1 hasn't been cut
+    else if ((state_defused | DEFUSED_WRONG) > 0)
     {
-      switch_state(BOMB_STATE::EXPLODED);
-      // TODO: play explode sfx
-    }
-    else
-    {
-      // Pulse
-      tone(BUZZER_PIN, 1300, 100);
+      static bool err_handled = false;
 
-      // Update display
-      auto time_left = bomb_started_time + bomb_explode_duration - now();
-      if (time_left < 0)
+      if (!err_handled)
       {
-        time_left = 0;
-      }
+        bomb_started_time = now() - bomb_explode_duration + (2L * 60L * 1000L); // set time left to 2 minutes
 
-      duration_to_digits_arr(time_left, dp_digits);
-      update_display(dp_digits);
+        digitalWrite(RED_LED_PIN, HIGH);
+        tone(BUZZER_PIN, 1300, 350);
+        delay(250);
+        digitalWrite(RED_LED_PIN, LOW);
+        delay(100);
+
+        digitalWrite(RED_LED_PIN, HIGH);
+        tone(BUZZER_PIN, 1300, 350);
+        delay(250);
+
+        err_handled = true;
+      }
+    }
+    // Wrong wires cut
+    else if ((state_defused & DEFUSED_WRONG) == DEFUSED_WRONG)
+    {
+      explode();
+    }
+
+    // Pulse
+    tone(BUZZER_PIN, 1300, 100);
+
+    // Update display
+    auto time_left = bomb_started_time + bomb_explode_duration - now();
+    if (time_left < 0)
+    {
+      time_left = 0;
+    }
+
+    duration_to_digits_arr(time_left, dp_digits);
+    update_display(dp_digits);
+
+    // Times up
+    if (now() > bomb_started_time + bomb_explode_duration)
+    {
+      explode();
     }
   }
   else if (cur_state == BOMB_STATE::DEFUSED)
