@@ -1,76 +1,8 @@
 #include <TimeLib.h>
 #include <TM1637Display.h>
+#include "button.h"
 
 #define DEBUG
-
-// TODO: move to button.h
-class Button
-{
-  int prev_state;
-  int cur_state;
-  time_t last_transition_time = 0;
-  bool consider_long_press = false;
-
-public:
-  const int pin;
-  const int long_press_trigger;
-
-public:
-  Button(int pin, int long_press_trigger = 2000) : pin(pin), long_press_trigger(long_press_trigger)
-  {
-    prev_state = cur_state = 0;
-  }
-
-  void update()
-  {
-    set_state(digitalRead(pin));
-
-    if (transitioned_to(LOW))
-    {
-      last_transition_time = millis();
-      consider_long_press = true;
-    }
-    else if (transitioned_to(HIGH))
-    {
-      consider_long_press = false;
-    }
-  }
-
-  bool transitioned_to(int state)
-  {
-    return prev_state != state && cur_state == state;
-  }
-
-  int get_state()
-  {
-    return cur_state;
-  }
-
-  bool long_press()
-  {
-    if (consider_long_press)
-    {
-#ifdef DEBUG
-      Serial.print("TRIGGER AT: ");
-      Serial.print(last_transition_time + long_press_trigger);
-      Serial.println();
-      Serial.println(millis(), DEC);
-#endif
-      return (last_transition_time + long_press_trigger) < millis();
-    }
-    return false;
-  }
-
-private:
-  void set_state(int state)
-  {
-    prev_state = cur_state;
-    cur_state = state;
-  }
-};
-
-// const int SET_BOMB_TIME_BTN_PIN = 10;
-// const int ARM_BOMB_BTN_PIN = 9;
 
 enum BOMB_STATE
 {
@@ -89,15 +21,14 @@ const int DP_1_DATA_PIN = 3;  // Data pin of 74HC595 is connected to Digital pin
 
 const int BOMB_WIRE_ONE_PIN = 12;
 const int BOMB_WIRE_TWO_PIN = 11;
-const int SET_BOMB_TIME_BTN_PIN = 10;>
-const int ARM_BOMB_BTN_PIN = 9;
+const int SET_BOMB_TIME_BTN_PIN = 10;
 
 const int BUZZER_PIN = A1;
 const int RED_LED_PIN = 2;
 const int GREEN_LED_PIN = 3;
 
 BOMB_STATE cur_state = BOMB_STATE::IDLE;
-Button arm_bomb_btn(ARM_BOMB_BTN_PIN), set_bomb_time_btn(SET_BOMB_TIME_BTN_PIN);
+Button set_bomb_time_btn(SET_BOMB_TIME_BTN_PIN);
 
 TM1637Display display(DP_2_CLK_PIN, DP_2_DATA_PIN);
 
@@ -135,7 +66,6 @@ void switch_state(BOMB_STATE state)
 void setup()
 {
   pinMode(set_bomb_time_btn.pin, INPUT_PULLUP);
-  pinMode(arm_bomb_btn.pin, INPUT_PULLUP);
 
   pinMode(BOMB_WIRE_ONE_PIN, INPUT_PULLUP);
   pinMode(BOMB_WIRE_TWO_PIN, INPUT_PULLUP);
