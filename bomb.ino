@@ -9,6 +9,7 @@ class Button
   int prev_state;
   int cur_state;
   time_t last_transition_time = 0;
+  bool consider_long_press = false;
 
 public:
   const int pin;
@@ -23,9 +24,15 @@ public:
   void update()
   {
     set_state(digitalRead(pin));
-    if (prev_state != cur_state)
+
+    if (transitioned_to(LOW))
     {
       last_transition_time = millis();
+      consider_long_press = true;
+    }
+    else if (transitioned_to(HIGH))
+    {
+      consider_long_press = false;
     }
   }
 
@@ -41,7 +48,17 @@ public:
 
   bool long_press()
   {
-    return transitioned_to(LOW) && last_transition_time > long_press_trigger;
+    if (consider_long_press)
+    {
+#ifdef DEBUG
+      Serial.print("TRIGGER AT: ");
+      Serial.print(last_transition_time + long_press_trigger);
+      Serial.println();
+      Serial.println(millis(), DEC);
+#endif
+      return (last_transition_time + long_press_trigger) < millis();
+    }
+    return false;
   }
 
 private:
@@ -72,7 +89,7 @@ const int DP_1_DATA_PIN = 3;  // Data pin of 74HC595 is connected to Digital pin
 
 const int BOMB_WIRE_ONE_PIN = 12;
 const int BOMB_WIRE_TWO_PIN = 11;
-const int SET_BOMB_TIME_BTN_PIN = 10;
+const int SET_BOMB_TIME_BTN_PIN = 10;>
 const int ARM_BOMB_BTN_PIN = 9;
 
 const int BUZZER_PIN = A1;
@@ -95,7 +112,23 @@ void switch_state(BOMB_STATE state)
 {
   cur_state = state;
   Serial.print("Switching to: ");
-  Serial.print(state);
+  String state_str = "";
+  switch (state)
+  {
+  case BOMB_STATE::IDLE:
+    state_str = "IDLE";
+    break;
+  case BOMB_STATE::OPERATIONAL:
+    state_str = "OPERATIONAL";
+    break;
+  case BOMB_STATE::EXPLODED:
+    state_str = "EXPLODED";
+    break;
+  case BOMB_STATE::DEFUSED:
+    state_str = "DEFUSED";
+    break;
+  }
+  Serial.print(state_str);
   Serial.println();
 }
 
@@ -116,7 +149,6 @@ void setup()
   pinMode(DP_1_DATA_PIN, OUTPUT);
 
   Serial.begin(115200);
-  Serial.println("Begin");
 
   display.setBrightness(8);
 
