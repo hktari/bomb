@@ -54,10 +54,53 @@ time_t bomb_started_time = 0;
 
 uint8_t dp_digits[5] = {};
 
+void write_motor(int a, int b, int c, int d)
+{
+  digitalWrite(MOTOR_A, a);
+  digitalWrite(MOTOR_B, b);
+  digitalWrite(MOTOR_C, c);
+  digitalWrite(MOTOR_D, d);
+}
+
+void onestep()
+{
+  const int motor_delay = 1000;
+
+  write_motor(1, 0, 0, 0);
+  delayMicroseconds(motor_delay);
+  write_motor(1, 1, 0, 0);
+  delayMicroseconds(motor_delay);
+  write_motor(0, 1, 0, 0);
+  delayMicroseconds(motor_delay);
+  write_motor(0, 1, 1, 0);
+  delayMicroseconds(motor_delay);
+  write_motor(0, 0, 1, 0);
+  delayMicroseconds(motor_delay);
+  write_motor(0, 0, 1, 1);
+  delayMicroseconds(motor_delay);
+  write_motor(0, 0, 0, 1);
+  delayMicroseconds(motor_delay);
+  write_motor(1, 0, 0, 1);
+  delayMicroseconds(motor_delay);
+}
+
 void explode()
 {
   switch_state(BOMB_STATE::EXPLODED);
-  // TODO: play explode sfx
+  int i;
+  i = 1;
+  #define NUMBER_OF_STEPS_PER_REV 312
+  while (i < NUMBER_OF_STEPS_PER_REV)
+  {
+    onestep();
+    i++;
+
+    if(i%80 == 0) tone(BUZZER_PIN, 1300, 150);
+
+  }
+
+
+  write_motor(0,0,0,0);
 }
 
 void switch_state(BOMB_STATE state)
@@ -192,8 +235,7 @@ void loop()
       explode();
     }
     // If wire 1 hasn't been cut
-    else if ((state_defused & DEFUSED_STATE::WIRE_1_CUT) != DEFUSED_STATE::WIRE_1_CUT 
-          && (state_defused & DEFUSED_WRONG) > 0)
+    else if ((state_defused & DEFUSED_STATE::WIRE_1_CUT) != DEFUSED_STATE::WIRE_1_CUT && (state_defused & DEFUSED_WRONG) > 0)
     {
       static bool err_handled = false;
 
