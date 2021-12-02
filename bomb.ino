@@ -19,22 +19,28 @@ enum BOMB_STATE
   DEFUSED
 };
 
-const int DP_2_DATA_PIN = 7; // TM1637
-const int DP_2_CLK_PIN = 2;  // TM1637
+#define DP_2_DATA_PIN 6 // TM1637
+#define DP_2_CLK_PIN 5  // TM1637
 
-const int DP_1_LATCH_PIN = 4; // Latch pin of 74HC595 is connected to Digital pin 5
-const int DP_1_CLK_PIN = 5;   // Clock pin of 74HC595 is connected to Digital pin 6
-const int DP_1_DATA_PIN = 3;  // Data pin of 74HC595 is connected to Digital pin 4
+#define DP_1_LATCH_PIN 3 // Latch pin of 74HC595 is connected to Digital pin 5
+#define DP_1_CLK_PIN 4   // Clock pin of 74HC595 is connected to Digital pin 6
+#define DP_1_DATA_PIN 2  // Data pin of 74HC595 is connected to Digital pin 4
 
-const int BOMB_WIRE_ONE_PIN = 12;
-const int BOMB_WIRE_TWO_PIN = 11;
-const int BOMB_WIRE_THREE_PIN = 9;
+#define BOMB_WIRE_ONE_PIN 12
+#define BOMB_WIRE_TWO_PIN 11
+#define BOMB_WIRE_THREE_PIN 10
 
-const int SET_BOMB_TIME_BTN_PIN = 10;
+#define SET_BOMB_TIME_BTN_PIN 9
+#define RED_LED_PIN 8
+#define GREEN_LED_PIN 7
 
-const int BUZZER_PIN = A1;
-const int RED_LED_PIN = 2;
-const int GREEN_LED_PIN = 3;
+
+#define BUZZER_PIN A1
+
+#define MOTOR_A A2
+#define MOTOR_B A3
+#define MOTOR_C A4
+#define MOTOR_D A5
 
 uint8_t state_defused = 0;
 BOMB_STATE cur_state = BOMB_STATE::IDLE;
@@ -95,6 +101,11 @@ void setup()
   pinMode(DP_1_CLK_PIN, OUTPUT);
   pinMode(DP_1_DATA_PIN, OUTPUT);
 
+  pinMode(MOTOR_A, OUTPUT);
+  pinMode(MOTOR_B, OUTPUT);
+  pinMode(MOTOR_C, OUTPUT);
+  pinMode(MOTOR_D, OUTPUT);
+  
   Serial.begin(115200);
 
   display.setBrightness(8);
