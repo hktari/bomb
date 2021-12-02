@@ -34,7 +34,6 @@ enum BOMB_STATE
 #define RED_LED_PIN 8
 #define GREEN_LED_PIN 7
 
-
 #define BUZZER_PIN A1
 
 #define MOTOR_A A2
@@ -105,7 +104,7 @@ void setup()
   pinMode(MOTOR_B, OUTPUT);
   pinMode(MOTOR_C, OUTPUT);
   pinMode(MOTOR_D, OUTPUT);
-  
+
   Serial.begin(115200);
 
   display.setBrightness(8);
@@ -125,7 +124,7 @@ void loop()
 
     if (set_bomb_time_btn.transitioned_to(HIGH))
     {
-      const unsigned long set_timer_step_sec = 30UL * 60UL; // 30 min
+      const unsigned long set_timer_step_sec = 30UL * 60UL * 1000L; // 30 min
       bomb_explode_duration += set_timer_step_sec;
       tone(BUZZER_PIN, 700, 100);
       if (bomb_explode_duration > MAX_BOMB_TIME)
@@ -133,9 +132,9 @@ void loop()
         bomb_explode_duration = 0;
       }
 
-      Serial.println(String("Set timer to: ") + String(bomb_explode_duration / 60) + String(" minutes"));
+      Serial.println(String("Set timer to: ") + String(bomb_explode_duration / 60 / 1000) + String(" minutes"));
 
-      duration_to_digits_arr(bomb_explode_duration, dp_digits);
+      duration_to_digits_arr(bomb_explode_duration / 1000L, dp_digits);
       update_display(dp_digits);
     }
     else if (set_bomb_time_btn.long_press())
@@ -154,9 +153,12 @@ void loop()
   }
   else if (cur_state == BOMB_STATE::OPERATIONAL)
   {
-    if (digitalRead(BOMB_WIRE_ONE_PIN) == HIGH) state_defused |= DEFUSED_STATE::WIRE_1_CUT;
-    if (digitalRead(BOMB_WIRE_TWO_PIN) == HIGH) state_defused |= DEFUSED_STATE::WIRE_2_CUT;
-    if (digitalRead(BOMB_WIRE_THREE_PIN) == HIGH) state_defused |= DEFUSED_STATE::WIRE_3_CUT;
+    if (digitalRead(BOMB_WIRE_ONE_PIN) == HIGH)
+      state_defused |= DEFUSED_STATE::WIRE_1_CUT;
+    if (digitalRead(BOMB_WIRE_TWO_PIN) == HIGH)
+      state_defused |= DEFUSED_STATE::WIRE_2_CUT;
+    if (digitalRead(BOMB_WIRE_THREE_PIN) == HIGH)
+      state_defused |= DEFUSED_STATE::WIRE_3_CUT;
 
     const uint8_t DEFUSED_SUCCESS = DEFUSED_STATE::WIRE_1_CUT | DEFUSED_STATE::WIRE_2_CUT | DEFUSED_STATE::WIRE_3_CUT;
     const uint8_t DEFUSED_WRONG = DEFUSED_STATE::WIRE_3_CUT | DEFUSED_STATE::WIRE_2_CUT;
@@ -218,7 +220,11 @@ void loop()
     {
       time_left = 0;
     }
-
+#ifdef DEBUG
+    Serial.print("TIME LEFT (s): ");
+    Serial.print(time_left);
+    Serial.println();
+#endif
     duration_to_digits_arr(time_left, dp_digits);
     update_display(dp_digits);
 
@@ -248,6 +254,7 @@ void loop()
 
 void duration_to_digits_arr(time_t duration, uint8_t digits[5])
 {
+  // duration = duration / 1000L;
   int h = hour(duration);
   int min = minute(duration);
   int sec = second(duration);
