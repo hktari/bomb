@@ -41,7 +41,6 @@ enum BOMB_STATE
 #define MOTOR_C A4
 #define MOTOR_D A5
 
-uint8_t state_defused = 0;
 BOMB_STATE cur_state = BOMB_STATE::IDLE;
 Button set_bomb_time_btn(SET_BOMB_TIME_BTN_PIN);
 
@@ -89,18 +88,17 @@ void explode()
   switch_state(BOMB_STATE::EXPLODED);
   int i;
   i = 1;
-  #define NUMBER_OF_STEPS_PER_REV 312
+#define NUMBER_OF_STEPS_PER_REV 312
   while (i < NUMBER_OF_STEPS_PER_REV)
   {
     onestep();
     i++;
 
-    if(i%80 == 0) tone(BUZZER_PIN, 1300, 150);
-
+    if (i % 80 == 0)
+      tone(BUZZER_PIN, 1300, 150);
   }
 
-
-  write_motor(0,0,0,0);
+  write_motor(0, 0, 0, 0);
 }
 
 void switch_state(BOMB_STATE state)
@@ -196,6 +194,9 @@ void loop()
   }
   else if (cur_state == BOMB_STATE::OPERATIONAL)
   {
+    static uint8_t state_defused = 0;
+    static uint8_t prev_state_defused = 0;
+
     if (digitalRead(BOMB_WIRE_ONE_PIN) == HIGH)
     {
       Serial.println("1 is HIGH");
@@ -234,14 +235,26 @@ void loop()
     {
       explode();
     }
-    // If wire 1 hasn't been cut
-    else if ((state_defused & DEFUSED_STATE::WIRE_1_CUT) != DEFUSED_STATE::WIRE_1_CUT && (state_defused & DEFUSED_WRONG) > 0)
+    // If all wires are still okay, OR wrong ones are still okay
+    else if (state_defused != prev_state_defused)
     {
-      static bool err_handled = false;
 
-      if (!err_handled)
+#ifdef DEBUG
+      Serial.println("\n----------------");
+      Serial.println(prev_state_defused);
+      Serial.println(state_defused);
+#endif
+
+      if ((state_defused & DEFUSED_STATE::WIRE_1_CUT) == DEFUSED_STATE::WIRE_1_CUT)
       {
-        Serial.println("ERR HANDLED");
+        digitalWrite(GREEN_LED_PIN, HIGH);
+        tone(BUZZER_PIN, 1300, 350);
+        delay(350);
+        digitalWrite(GREEN_LED_PIN, LOW);
+      }
+      // Wrong wire cut
+      else
+      {
         bomb_started_time = now() - bomb_explode_duration + (2L * 60L); // set time left to 2 minutes
 
         digitalWrite(RED_LED_PIN, HIGH);
@@ -253,10 +266,10 @@ void loop()
         digitalWrite(RED_LED_PIN, HIGH);
         tone(BUZZER_PIN, 1300, 350);
         delay(250);
-
-        err_handled = true;
       }
     }
+
+    prev_state_defused = state_defused;
 
     // Pulse
     tone(BUZZER_PIN, 1300, 100);
