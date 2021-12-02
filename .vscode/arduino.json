@@ -1,11 +1,7 @@
 {
-    "board": "arduino:avr:uno",
+    "board": "arduino:avr:nano",
     "programmer": "arduino:avrispmkii",
-<<<<<<< HEAD
-    "sketch": "../TM1637/examples/TM1637Test/TM1637Test.ino",
-    "port": "/dev/ttyACM0"
-=======
-    "sketch": "bomb.ino",
-    "port": "COM3"
->>>>>>> e1b6746a425e8e34586a63e189dc3520f623fd17
+    "sketch": "motor_sample/motor.ino",
+    "port": "/dev/ttyUSB0",
+    "configuration": "cpu=atmega328old"
 }

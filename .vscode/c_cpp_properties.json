@@ -16,8 +16,7 @@
             "intelliSenseMode": "gcc-x64",
             "includePath": [
                 "/home/hktari/Documents/arduino-ide/arduino-1.8.16/hardware/arduino/avr/cores/arduino",
-                "/home/hktari/Documents/arduino-ide/arduino-1.8.16/hardware/arduino/avr/variants/standard",
-                "/home/hktari/Arduino/libraries/TM1637",
+                "/home/hktari/Documents/arduino-ide/arduino-1.8.16/hardware/arduino/avr/variants/eightanaloginputs",
                 "/home/hktari/Documents/arduino-ide/arduino-1.8.16/hardware/tools/avr/lib/gcc/avr/7.3.0/include",
                 "/home/hktari/Documents/arduino-ide/arduino-1.8.16/hardware/tools/avr/lib/gcc/avr/7.3.0/include-fixed",
                 "/home/hktari/Documents/arduino-ide/arduino-1.8.16/hardware/tools/avr/avr/include"
@@ -30,7 +29,7 @@
             "defines": [
                 "F_CPU=16000000L",
                 "ARDUINO=10816",
-                "ARDUINO_AVR_UNO",
+                "ARDUINO_AVR_NANO",
                 "ARDUINO_ARCH_AVR",
                 "__DBL_MIN_EXP__=(-125)",
                 "__HQ_FBIT__=15",
