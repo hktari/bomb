@@ -186,8 +186,14 @@ void loop()
       digitalWrite(GREEN_LED_PIN, HIGH);
       tone(BUZZER_PIN, 1300, 350);
     }
+    // Wrong wires cut
+    else if ((state_defused & DEFUSED_WRONG) == DEFUSED_WRONG)
+    {
+      explode();
+    }
     // If wire 1 hasn't been cut
-    else if ((state_defused & DEFUSED_WRONG) > 0)
+    else if ((state_defused & DEFUSED_STATE::WIRE_1_CUT) != DEFUSED_STATE::WIRE_1_CUT 
+          && (state_defused & DEFUSED_WRONG) > 0)
     {
       static bool err_handled = false;
 
@@ -208,11 +214,6 @@ void loop()
 
         err_handled = true;
       }
-    }
-    // Wrong wires cut
-    else if ((state_defused & DEFUSED_WRONG) == DEFUSED_WRONG)
-    {
-      explode();
     }
 
     // Pulse
