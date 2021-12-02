@@ -124,7 +124,7 @@ void loop()
 
     if (set_bomb_time_btn.transitioned_to(HIGH))
     {
-      const unsigned long set_timer_step_sec = 30UL * 60UL * 1000L; // 30 min
+      const unsigned long set_timer_step_sec = 30UL * 60UL; // 30 min
       bomb_explode_duration += set_timer_step_sec;
       tone(BUZZER_PIN, 700, 100);
       if (bomb_explode_duration > MAX_BOMB_TIME)
@@ -132,9 +132,9 @@ void loop()
         bomb_explode_duration = 0;
       }
 
-      Serial.println(String("Set timer to: ") + String(bomb_explode_duration / 60 / 1000) + String(" minutes"));
+      Serial.println(String("Set timer to: ") + String(bomb_explode_duration / 60) + String(" minutes"));
 
-      duration_to_digits_arr(bomb_explode_duration / 1000L, dp_digits);
+      duration_to_digits_arr(bomb_explode_duration, dp_digits);
       update_display(dp_digits);
     }
     else if (set_bomb_time_btn.long_press())
@@ -154,7 +154,10 @@ void loop()
   else if (cur_state == BOMB_STATE::OPERATIONAL)
   {
     if (digitalRead(BOMB_WIRE_ONE_PIN) == HIGH)
+    {
+      Serial.println("1 is HIGH");
       state_defused |= DEFUSED_STATE::WIRE_1_CUT;
+    }
     if (digitalRead(BOMB_WIRE_TWO_PIN) == HIGH)
       state_defused |= DEFUSED_STATE::WIRE_2_CUT;
     if (digitalRead(BOMB_WIRE_THREE_PIN) == HIGH)
@@ -184,13 +187,14 @@ void loop()
       tone(BUZZER_PIN, 1300, 350);
     }
     // If wire 1 hasn't been cut
-    else if ((state_defused | DEFUSED_WRONG) > 0)
+    else if ((state_defused & DEFUSED_WRONG) > 0)
     {
       static bool err_handled = false;
 
       if (!err_handled)
       {
-        bomb_started_time = now() - bomb_explode_duration + (2L * 60L * 1000L); // set time left to 2 minutes
+        Serial.println("ERR HANDLED");
+        bomb_started_time = now() - bomb_explode_duration + (2L * 60L); // set time left to 2 minutes
 
         digitalWrite(RED_LED_PIN, HIGH);
         tone(BUZZER_PIN, 1300, 350);
@@ -229,7 +233,7 @@ void loop()
     update_display(dp_digits);
 
     // Times up
-    if (now() > bomb_started_time + bomb_explode_duration)
+    if (time_left == 0)
     {
       explode();
     }
@@ -252,12 +256,13 @@ void loop()
   }
 }
 
+// duration is in sec
 void duration_to_digits_arr(time_t duration, uint8_t digits[5])
 {
   // duration = duration / 1000L;
-  int h = hour(duration);
-  int min = minute(duration);
-  int sec = second(duration);
+  int h = numberOfHours(duration);
+  int min = numberOfMinutes(duration);
+  int sec = numberOfSeconds(duration);
 
   int mins_combined = h * 60 + min;
 
