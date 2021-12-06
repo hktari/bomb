@@ -41,6 +41,9 @@ enum BOMB_STATE
 #define MOTOR_C A4
 #define MOTOR_D A5
 
+#define TIMER_STEP_SWITCH A0
+
+
 BOMB_STATE cur_state = BOMB_STATE::IDLE;
 Button set_bomb_time_btn(SET_BOMB_TIME_BTN_PIN);
 
@@ -146,6 +149,8 @@ void setup()
   pinMode(MOTOR_C, OUTPUT);
   pinMode(MOTOR_D, OUTPUT);
 
+  pinMode(TIMER_STEP_SWITCH, INPUT_PULLUP);
+
   Serial.begin(115200);
 
   display.setBrightness(8);
@@ -166,7 +171,8 @@ void loop()
     if (set_bomb_time_btn.transitioned_to(HIGH))
     {
       const unsigned long set_timer_step_sec = 30UL * 60UL; // 30 min
-      bomb_explode_duration += set_timer_step_sec;
+      const unsigned long set_timer_step_sec_short = 5UL * 60UL; // 5 min
+      bomb_explode_duration += digitalRead(TIMER_STEP_SWITCH) == LOW ? set_timer_step_sec_short : set_timer_step_sec;
       tone(BUZZER_PIN, 700, 100);
       if (bomb_explode_duration > MAX_BOMB_TIME)
       {
@@ -359,10 +365,7 @@ const uint8_t digitToSegment[] = {
       0b01101110, // 3
       0b01001011, // 4
       0b00101111, // 5
-      0b00111111, // 6
-      0b01101000, // 7
-      0b01111111, // 8
-      0b01101111, // 9
+      0b00111111, // 6>
       0b01111011, // A
       0b00011111, // B
       0b00110101, // C
